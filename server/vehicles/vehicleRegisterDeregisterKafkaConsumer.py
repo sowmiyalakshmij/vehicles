@@ -1,11 +1,11 @@
 from confluent_kafka import Consumer, KafkaError
 from vehicles.repository.vehiclesMongo import insertRegisterDeregisterMsg
+from vehicles.utils import vehicleConstants
 
-
+# Persists each register / deregister event in DB
 def persistKafkaMsgInDB(msg) :
-#    print(f"msg : {msg}")
-#    print(f"msg key : {msg.key()}" )
-#    print(f"msg value : {msg.value()}" )
+    # This method inserts a document in mongodb collection
+    # corresponding to register / deregister event
     insertRegisterDeregisterMsg(msg)
 
 settings = {
@@ -18,8 +18,7 @@ settings = {
 }
 
 c = Consumer(settings)
-
-c.subscribe(['vehicle-register-deregister'])
+c.subscribe([vehicleConstants.KAFKA_TOPIC_VEHICLE_REGISTER_DEREGISTER])
 
 try:
     while True:

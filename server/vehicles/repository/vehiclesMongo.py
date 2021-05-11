@@ -1,20 +1,20 @@
 import pymongo
 from pymongo import MongoClient
 import json
+from vehicles.utils import vehicleConstants
 
-mongoClient = MongoClient("localhost", 27017)
-vehiclesDb = mongoClient['vehicles-db']
+mongoClient = MongoClient(vehicleConstants.MONGO_HOSTNAME, vehicleConstants.MONGO_PORT_NUMBER)
+vehiclesDb = mongoClient[vehicleConstants.MONGO_DBNAME]
 
+# This method inserts a document into vehicle collection
+# corresponding to register / deregister event
 def insertRegisterDeregisterMsg(msg) :
     msgDict = json.loads(msg.value())
-    
-    print(msgDict)
     vehiclesDb.vehicle.insert_one(msgDict)
-    print("insert into mongo vehicle collection complete")
 
+# This method inserts a document into vehicleLocation collection
+# corresponding to location update
 def insertVehicleLocationMsg(msg) :
     msgDict = json.loads(msg.value())
-
-    print(msgDict)
     vehiclesDb.vehicleLocation.insert_one(msgDict)
-    print("insert into mongo vehicleLocation collection complete")  
+

@@ -2,16 +2,17 @@ from flask import Flask
 from flask import request, jsonify, make_response
 from http import HTTPStatus
 from vehicles.logic.vehiclesLogic import vehiclesLogic
+from vehicles.utils import vehicleConstants
 
 app = Flask(__name__)
 
 # Get all vehicles
+# localhost:5000/vehicles
 @app.route('/vehicles')
 def getAllVehicles() :
 	vehDict = vehiclesLogic.getVehicles()
 	response = make_response(jsonify(vehDict), 200)
 	return response
-	
 
 # Register vehicle
 # localhost:5000/vehicles POST 
@@ -25,13 +26,13 @@ def registerVehicle():
 	id = vehicle['id']
 
 	registerStatus = vehiclesLogic.registerVehicle(id)
-	# return f"NEW : Register vehicle with id {id}"
-
-	if registerStatus == "SUCCESS" :
+	if registerStatus == vehicleConstants.SUCCESS :
 		# Return 204 No Content on success
 		response = make_response(jsonify({}), 204)
-	elif registerStatus == "VEHICLE ALREADY REGISTERED" :
-    		response = make_response(jsonify({"error" : "The vehicle you are trying to register is already registered. You can start calling update location."}), 409)
+	elif registerStatus == vehicleConstants.VEHICLE_ALREADY_REGISTERED :
+    		response = make_response(jsonify({"error" : "The vehicle you are trying to register \
+is already registered. You can start calling update location."}), 409)
+	
 	return response
 
 # Location update of vehicle
@@ -47,14 +48,18 @@ def registerVehicle():
 def updateVehicleLocation(id):
 	locationInfo = request.get_json()
 	updateStatus = vehiclesLogic.updateLocation(id, locationInfo)
-	# return f"Updated location of vehicle {id} to lat {locationInfo['lat']}, lng {locationInfo['lng']} and at {locationInfo['at']}"
-	# return f"Updated location of vehicle {id}"
 
-	if updateStatus == "SUCCESS" :
+	if updateStatus == vehicleConstants.SUCCESS :
 		# Return 204 No Content on success
 		response = make_response(jsonify({}), 204)
-	elif updateStatus == "VEHICLE NOT REGISTERED" :
-		response = make_response(jsonify({"error" : "Please register vehicle before calling location update"}), 409)
+	elif updateStatus == vehicleConstants.VEHICLE_NOT_REGISTERED :
+		response = make_response(jsonify({"error" : "Please register vehicle before calling \
+location update"}), 409)
+	elif updateStatus == vehicleConstants.VEHICLE_OUTSIDE_CITY_BOUNDARY :
+    		# If vehicle is outside city boundary, don't update 
+			# location. Return 200 No content
+    		response = make_response(jsonify({"message" : "Vehicle is outside city boundary. \
+Location update discarded."}), 200)
 	return response
 
 # De-register vehicle
@@ -63,11 +68,11 @@ def updateVehicleLocation(id):
 # No request body
 @app.route('/vehicles/<id>', methods=['DELETE']) 
 def deregisterVehicle(id):
-	# return f"Deregister vehicle with id {id}"
 	deregisterStatus = vehiclesLogic.deregisterVehicle(id)
-	if deregisterStatus == "SUCCESS" :
+	if deregisterStatus == vehicleConstants.SUCCESS :
 		# Return 204 No Content on success
 		response = make_response(jsonify({}), 204)
-	elif deregisterStatus == "VEHICLE NOT REGISTERED" :
-    		response = make_response(jsonify({"error" : "The vehicle you are trying to derigister is not registered."}), 409)
+	elif deregisterStatus == vehicleConstants.VEHICLE_NOT_REGISTERED :
+    		response = make_response(jsonify({"error" : "The vehicle you are trying to \
+derigister is not registered."}), 409)
 	return response
