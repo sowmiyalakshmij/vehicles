@@ -2,8 +2,9 @@ from confluent_kafka import Consumer, KafkaError
 from vehicles.repository.vehiclesMongo import insertVehicleLocationMsg
 from vehicles.utils import vehicleConstants
 
+
 # Persists each register / deregister event in DB
-def persistKafkaMsgInDB(msg) :
+def persistKafkaMsgInDB(msg):
     # This method inserts a document in mongodb collection
     # corresponding to location update
     insertVehicleLocationMsg(msg)

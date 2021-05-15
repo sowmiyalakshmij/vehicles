@@ -1,6 +1,7 @@
 # This code has been taken from https://gist.github.com/jeromer/2005586
 import math
 
+
 # LICENSE: public domain
 
 def calculate_initial_compass_bearing(pointA, pointB):
@@ -29,7 +30,7 @@ def calculate_initial_compass_bearing(pointA, pointB):
 
     x = math.sin(diffLong) * math.cos(lat2)
     y = math.cos(lat1) * math.sin(lat2) - (math.sin(lat1)
-            * math.cos(lat2) * math.cos(diffLong))
+                                           * math.cos(lat2) * math.cos(diffLong))
 
     initial_bearing = math.atan2(x, y)
 

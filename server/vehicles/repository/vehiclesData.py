@@ -1,8 +1,11 @@
-import redis
 import json
-from confluent_kafka import Producer
 import socket
+
+import redis
+from confluent_kafka import Producer
 from vehicles.utils import vehicleConstants
+from vehicles.utils.exceptions.vehicleExceptions import VehicleRedisException, VehicleKafkaException
+
 
 # This can be treated as the data layer for vehicles api server
 # As only latest location / status of the vehicle would be of interest for consumption
@@ -19,49 +22,84 @@ from vehicles.utils import vehicleConstants
 # subscribed to this topic will take care of persisting the event 
 # in mongodb (collection name : vehicleLocation)
 #
-class vehiclesData :
-    rds = redis.Redis(decode_responses=True)
-    kafkaProducer = Producer({'bootstrap.servers': vehicleConstants.KAFKA_BOOTSTRAP_SERVERS,
-        'client.id': socket.gethostname()})
+class vehiclesData:
+    try :
+        rds = redis.Redis(decode_responses=True)
+    except :
+        raise VehicleRedisException
+    
+    try :
+        kafkaProducer = Producer({'bootstrap.servers': vehicleConstants.KAFKA_BOOTSTRAP_SERVERS,
+                              'client.id': socket.gethostname()})
+    except :
+        raise VehicleKafkaException
 
     @staticmethod
-    def getVehicles() :
-        keys = vehiclesData.rds.keys()
-        data = {}
-        for k in keys : 
-            data[k] = vehiclesData.rds.get(k)
+    def getVehicles():
+        try:
+            keys = vehiclesData.rds.keys()
+            data = {}
+            for k in keys:
+                data[k] = vehiclesData.rds.get(k)
+        except:
+            raise VehicleRedisException
         return data
 
     @staticmethod
-    def createVehicle(id = id) :
-        # Add entry in redis for vehicle registration
-        vehiclesData.rds.set(id, "")
-
-        # Emit event to kafka topic corresponding to vehicle registration
-        kafkaPayload = {"id" : id, "action" : "REGISTER"}
-        vehiclesData.kafkaProducer.produce(vehicleConstants.KAFKA_TOPIC_VEHICLE_REGISTER_DEREGISTER, key=id, value=json.dumps(kafkaPayload))
-
-    @staticmethod
-    def deleteVehicle(id) :
-        # Delete entry from redis to indicate vehicle deregistration
-        vehiclesData.rds.delete(id)
-        
-        # Emit event to kafka topic corresponding to vehicle deregistration
-        kafkaPayload = {"id" : id, "action" : "DEREGISTER"}
-        vehiclesData.kafkaProducer.produce(vehicleConstants.KAFKA_TOPIC_VEHICLE_REGISTER_DEREGISTER, key=id, value=json.dumps(kafkaPayload))
+    def createVehicle(id=id):
+        try:
+            # Add entry in redis for vehicle registration
+            vehiclesData.rds.set(id, "")
+        except:
+            raise VehicleRedisException
+        try:
+            # Emit event to kafka topic corresponding to vehicle registration
+            kafkaPayload = {"id": id, "action": "REGISTER"}
+            vehiclesData.kafkaProducer.produce(vehicleConstants.KAFKA_TOPIC_VEHICLE_REGISTER_DEREGISTER, key=id,
+                                               value=json.dumps(kafkaPayload))
+        except:
+            raise VehicleKafkaException
 
     @staticmethod
-    def getLocationFromRedis(id) :
-        return vehiclesData.rds.get(id)
+    def deleteVehicle(id):
+        try:
+            # Delete entry from redis to indicate vehicle deregistration
+            vehiclesData.rds.delete(id)
+        except:
+            raise VehicleRedisException
+
+        try:
+            # Emit event to kafka topic corresponding to vehicle deregistration
+            kafkaPayload = {"id": id, "action": "DEREGISTER"}
+            vehiclesData.kafkaProducer.produce(vehicleConstants.KAFKA_TOPIC_VEHICLE_REGISTER_DEREGISTER, key=id,
+                                               value=json.dumps(kafkaPayload))
+        except:
+            raise VehicleKafkaException
 
     @staticmethod
-    def updateLocation(id, val) :
-        # Update redis with new location details
-        vehiclesData.rds.set(id, val)
-
-        # Emit event to kafka topic corresponding to vehicle location update
-        vehiclesData.kafkaProducer.produce(vehicleConstants.KAFKA_TOPIC_VEHICLE_LOCATION_UPDATE, key=id, value=val)
+    def getLocationFromRedis(id):
+        try:
+            return vehiclesData.rds.get(id)
+        except:
+            raise VehicleRedisException
 
     @staticmethod
-    def isVehicleRegistered(id) :
-        return vehiclesData.rds.keys(id)
+    def updateLocation(id, val):
+        try:
+            # Update redis with new location details
+            vehiclesData.rds.set(id, val)
+        except:
+            raise VehicleRedisException
+
+        try:
+            # Emit event to kafka topic corresponding to vehicle location update
+            vehiclesData.kafkaProducer.produce(vehicleConstants.KAFKA_TOPIC_VEHICLE_LOCATION_UPDATE, key=id, value=val)
+        except:
+            raise VehicleKafkaException
+
+    @staticmethod
+    def isVehicleRegistered(id):
+        try:
+            return vehiclesData.rds.keys(id)
+        except:
+            raise VehicleRedisException
